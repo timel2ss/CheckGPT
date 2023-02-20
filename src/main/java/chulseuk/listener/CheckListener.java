@@ -8,17 +8,14 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
+import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
-
 @Slf4j
 @RequiredArgsConstructor
 public class CheckListener extends ListenerAdapter {
-    private final EntityManager em;
     private final LogRepository logRepository;
 
     @Override
@@ -28,39 +25,53 @@ public class CheckListener extends ListenerAdapter {
             case "cc":
             case "ㅊㅊ":
             case "출첵":
-                event.reply("출석체크가 완료되었습니다").queue();
+                if (checkAttendance(event.getGuild(), event.getUser())) {
+                    event.reply("출석체크가 완료되었습니다.")
+                            .setEphemeral(true).queue();
+                    return;
+                }
+                event.reply("오늘 이미 출석을 완료했습니다")
+                        .setEphemeral(true).queue();
                 break;
         }
     }
 
     @Override
     public void onGuildVoiceUpdate(GuildVoiceUpdateEvent event) {
-        EntityTransaction tx = em.getTransaction();
+        Guild guild = event.getGuild();
+        User user = event.getMember().getUser();
+        checkAttendance(guild, user);
+    }
 
-        try {
-            tx.begin();
-
-            Guild guild = event.getGuild();
-            User user = event.getMember().getUser();
-
-            Log recentLog = logRepository.findRecentByGuildIdAndUserId(guild.getId(), user.getId());
-            if (recentLog != null && recentLog.isToday()) {
-                tx.commit();
-                return;
-            }
-
-            Log log = new Log(guild.getId(), user.getId());
-            logRepository.save(log);
-
-            TextChannel textChannel = (TextChannel) guild.getChannels().stream()
-                    .filter(channel -> channel.getType() == ChannelType.TEXT && channel.getName().equals("출석부"))
-                    .findAny().orElseThrow(() -> new RuntimeException("채팅 채널을 찾을 수 없습니다"));
-
-            textChannel.sendMessage(user.getName() + "님의 출석체크가 완료되었습니다.").queue();
-
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
+    /**
+     * 오늘 이미 출석했다면 false를 반환한다.
+     * 출석을 완료했다면 true를 반환한다.
+     */
+    private boolean checkAttendance(Guild guild, User user) {
+        Log recentLog = logRepository.findRecentByGuildIdAndUserId(guild.getId(), user.getId());
+        if (isAlreadyCheckedToday(recentLog)) {
+            return false;
         }
+
+        Log log = new Log(guild.getId(), user.getId());
+        logRepository.save(log);
+
+        TextChannel textChannel = findAttendanceRoom(guild);
+        textChannel.sendMessage(user.getName() + "님의 출석체크가 완료되었습니다.").queue();
+        return true;
+    }
+
+    private boolean isAlreadyCheckedToday(Log recentLog) {
+        return recentLog != null && recentLog.isToday();
+    }
+
+    private TextChannel findAttendanceRoom(Guild guild) {
+        return (TextChannel) guild.getChannels().stream()
+                .filter(this::isAttendanceRoom)
+                .findAny().orElseThrow(() -> new RuntimeException("채팅 채널을 찾을 수 없습니다"));
+    }
+
+    private boolean isAttendanceRoom(GuildChannel channel) {
+        return channel.getType() == ChannelType.TEXT && channel.getName().equals("출석부");
     }
 }

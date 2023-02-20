@@ -1,6 +1,6 @@
 package chulseuk;
 
-import chulseuk.listener.CheckListener;
+import chulseuk.listener.TransactionProxyCheckListener;
 import chulseuk.repository.LogRepository;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
@@ -27,7 +27,7 @@ public class Main {
         LogRepository logRepository = new LogRepository(em);
 
         JDA jda = JDABuilder.createLight(args[0], Collections.emptyList())
-                .addEventListeners(new CheckListener(em, logRepository))
+                .addEventListeners(new TransactionProxyCheckListener(em, logRepository))
                 .enableIntents(GatewayIntent.GUILD_VOICE_STATES)
                 .enableCache(CacheFlag.VOICE_STATE)
                 .build();

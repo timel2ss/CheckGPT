@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
-import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
@@ -66,12 +65,17 @@ public class CheckListener extends ListenerAdapter {
     }
 
     private TextChannel findAttendanceRoom(Guild guild) {
-        return (TextChannel) guild.getChannels().stream()
+        return guild.getTextChannels().stream()
                 .filter(this::isAttendanceRoom)
-                .findAny().orElseThrow(() -> new RuntimeException("채팅 채널을 찾을 수 없습니다"));
+                .findAny()
+                .orElse(createAttendanceRoom(guild));
+    }
+
+    private TextChannel createAttendanceRoom(Guild guild) {
+        return guild.createTextChannel("출석부").complete();
     }
 
     private boolean isAttendanceRoom(GuildChannel channel) {
-        return channel.getType() == ChannelType.TEXT && channel.getName().equals("출석부");
+        return channel.getName().equals("출석부");
     }
 }

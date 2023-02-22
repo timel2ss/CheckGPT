@@ -68,7 +68,7 @@ public class CheckListener extends ListenerAdapter {
         return guild.getTextChannels().stream()
                 .filter(this::isAttendanceRoom)
                 .findAny()
-                .orElse(createAttendanceRoom(guild));
+                .orElseGet(() -> createAttendanceRoom(guild));
     }
 
     private TextChannel createAttendanceRoom(Guild guild) {

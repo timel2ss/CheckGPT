@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(indexes = @Index(name = "i_gid_uid", columnList = "guildId, userId"))
+@Table(indexes = @Index(name = "idx_gid_uid_time", columnList = "guildId, userId, attendanceTime"))
 public class Log {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

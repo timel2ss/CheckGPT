@@ -35,7 +35,7 @@ public class Main {
         jda.updateCommands().addCommands(
                 Commands.slash("ㅊㅊ", "출석체크"),
                 Commands.slash("cc", "출석체크"),
-                Commands.slash("출첵", "출석체크")
+                Commands.slash("그래프", "출석 기록을 그래프로 나타냅니다")
         ).queue();
 
         log.info("Server starts");

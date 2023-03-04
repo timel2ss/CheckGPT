@@ -15,7 +15,7 @@ public class LogRepository {
     }
 
     public List<Log> findByGuildIdAndUserId(String guildId, String userId) {
-        String query = "select l from Log as l where l.guildId = :guildId and l.userId = :userId";
+        String query = "select l from Log as l where l.guildId = :guildId and l.userId = :userId order by l.attendanceTime desc";
         return em.createQuery(query, Log.class)
                 .setParameter("guildId", guildId)
                 .setParameter("userId", userId)

@@ -2,6 +2,7 @@ package chulseuk.listener;
 
 import chulseuk.domain.Log;
 import chulseuk.repository.LogRepository;
+import chulseuk.util.ChartUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Guild;
@@ -20,11 +21,13 @@ public class CheckListener extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         log.info("event: {}", event.getName());
+        Guild guild = event.getGuild();
+        User user = event.getUser();
+
         switch (event.getName()) {
             case "cc":
             case "ㅊㅊ":
-            case "출첵":
-                if (checkAttendance(event.getGuild(), event.getUser())) {
+                if (checkAttendance(guild, user)) {
                     event.reply("출석체크가 완료되었습니다.")
                             .setEphemeral(true).queue();
                     return;
@@ -32,6 +35,9 @@ public class CheckListener extends ListenerAdapter {
                 event.reply("오늘 이미 출석을 완료했습니다")
                         .setEphemeral(true).queue();
                 break;
+            case "그래프":
+                String chart = ChartUtil.drawChart(logRepository.findByGuildIdAndUserId(guild.getId(), user.getId()));
+                event.reply(user.getName() + "님의 출석 기록입니다\n```" + chart + "```").setEphemeral(true).queue();
         }
     }
 
